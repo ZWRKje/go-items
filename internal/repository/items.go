@@ -7,6 +7,7 @@ import (
 	"log"
 	"simple-api/internal/config"
 	"simple-api/internal/service"
+	"strings"
 
 	_ "github.com/lib/pq"
 )
@@ -17,7 +18,7 @@ type ItemsRepository struct {
 
 func NewItemsRepository(cfg config.Config) *ItemsRepository {
 	connStr := fmt.Sprintf(
-		"host=%s port=%s user=%s password=%s dbname=%s sslmode=%s",
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s",
 		cfg.Host, cfg.Port, cfg.User, cfg.Password, cfg.DBName, "disable",
 	)
 
@@ -44,27 +45,37 @@ func (r *ItemsRepository) Create(ctx context.Context, data service.CreateParams)
 }
 
 func (r *ItemsRepository) Update(ctx context.Context, id int, params service.UpdateParams) error {
-	var setStr string
 	var args []interface{}
+	var updates []string
+	argsIndex := 1
 
 	if params.Cost != nil {
-		setStr = fmt.Sprintf("query = %f", *params.Cost)
-		args = append(args, params.Cost)
+		updates = append(updates, fmt.Sprintf("cost = $%d", argsIndex))
+		args = append(args, *params.Cost)
+		argsIndex++
 	}
 
 	if params.Description != nil {
-		qStr := fmt.Sprintf(", description = %s", *params.Description)
-		setStr += qStr
-		args = append(args, params.Description)
+		updates = append(updates, fmt.Sprintf("description = $%d", argsIndex))
+		args = append(args, *params.Description)
+		argsIndex++
 	}
 
 	if params.Name != nil {
-		qStr := fmt.Sprintf(", name = %s", *params.Name)
-		setStr += qStr
-		args = append(args, params.Name)
+		updates = append(updates, fmt.Sprintf("name = $%d", argsIndex))
+		args = append(args, *params.Name)
+		argsIndex++
 	}
 
-	query := fmt.Sprintf("Update items SET %s WHERE id = $%d", setStr, id)
+	if len(updates) == 0 {
+		return nil
+	}
+
+	args = append(args, id)
+
+	query := fmt.Sprintf("UPDATE items SET %s WHERE id = $%d",
+		strings.Join(updates, ", "),
+		argsIndex)
 
 	result, err := r.db.ExecContext(ctx, query, args...)
 	if err != nil {
@@ -84,7 +95,7 @@ func (r *ItemsRepository) Update(ctx context.Context, id int, params service.Upd
 
 func (r *ItemsRepository) Get(ctx context.Context, id int) (service.Item, error) {
 	var item service.Item
-	err := r.db.QueryRowContext(ctx, `SELECT id, name, description, cost FROM items WHERE id = $%d`, id).
+	err := r.db.QueryRowContext(ctx, `SELECT id, name, description, cost FROM items WHERE id = $1`, id).
 		Scan(&item.Id, &item.Name, &item.Description, &item.Cost)
 
 	if err != nil {

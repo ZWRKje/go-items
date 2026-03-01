@@ -23,7 +23,7 @@ func Init() (*Config, error) {
 		return nil, err
 	}
 	port, err := strconv.Atoi(getEnv("DB_PORT", "8080"))
-
+	log.Println(port)
 	if err != nil {
 		log.Println("Cannot get port")
 		return nil, err

@@ -1,0 +1,19 @@
+services:
+  postgres:
+    image: postgres:18
+    container_name: items_postgres
+    environment:
+      POSTGRES_DB: items
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+
+  app:
+      build: .
+      container_name: items_app1
+      ports:
+        - "8080:8080"
+
+volumes:
+  postgres_data:

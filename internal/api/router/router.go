@@ -20,10 +20,10 @@ type AppRouter struct {
 }
 
 func (a *AppRouter) MountHandlers() {
-	a.Router.Post("/items/", a.itemHandler.CreateItem)
+	a.Router.Post("/items", a.itemHandler.CreateItem)
 	a.Router.Put("/items/{id}", a.itemHandler.UpdateItem)
-	a.Router.Delete("/delete/{id}", a.itemHandler.DeleteItem)
-	a.Router.Get("/get/{id}", a.itemHandler.GetItem)
+	a.Router.Delete("/items/{id}", a.itemHandler.DeleteItem)
+	a.Router.Get("/items/{id}", a.itemHandler.GetItem)
 	a.Router.Get("/", a.itemHandler.HealthCheck)
 }
 
